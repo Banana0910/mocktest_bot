@@ -1,0 +1,24 @@
+{
+  "name": "mocktest_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Banana0910/mocktest_bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Banana0910/mocktest_bot/issues"
+  },
+  "homepage": "https://github.com/Banana0910/mocktest_bot#readme",
+  "dependencies": {
+    "@discordjs/voice": "^0.7.5",
+    "discord.js": "^13.6.0",
+    "ffmpeg-static": "^4.4.1"
+  }
+}
