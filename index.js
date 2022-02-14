@@ -1,12 +1,12 @@
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, MessageEmbed, MessageButton, MessageActionRow, Collector, Interaction, Channel} = require('discord.js');
 const { joinVoiceChannel, createAudioResource, createAudioPlayer } = require('@discordjs/voice');
 const { AudioPlayerStatus, NoSubscriberBehavior } = require('@discordjs/voice');
 const { token } = require('./config.json');
 
 const TARGET_GUILD = "783625320062386217";
 
-const TARGET_VOICE_CHANNEL = "870182484426506270";
-const TARGET_TEXT_CHANNEL = "";
+const TARGET_TEXT_CHANNEL = "935885611599024148";
+const TARGET_VOICE_CHANNEL = "935885631010246706";
 
 let connection;
 let next_music;
@@ -21,8 +21,9 @@ const bot = new Client({
         Intents.FLAGS.GUILDS,   
         Intents.FLAGS.GUILD_MESSAGES, 
         Intents.FLAGS.GUILD_VOICE_STATES,
-        Intents.FLAGS.GUILD_MEMBERS
-    ] 
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.DIRECT_MESSAGES,
+    ],
 });
 
 player.on(AudioPlayerStatus.Idle, () => {
@@ -48,86 +49,76 @@ function JoinChannel(channelId) {
 bot.on('ready', () =>  {
     bot.user.setActivity("감독", { type: "PLAYING" });
     console.log(bot.user.tag);
-
-    JoinChannel(TARGET_VOICE_CHANNEL);
-    loof_music = "./sounds/test_music.mp3";
-    player.play(createAudioResource(loof_music));
-    connection.subscribe(player);
-
-    // JoinChannel(TARGET_VOICE_CHANNEL);
-    // let resource = createAudioResource('./sounds/test_music.mp3');
-    // player.play(resource);
-    // connection.subscribe(player);
-    // next_resource = createAudioResource('./sounds/audio.mp3');
 });
 
 bot.on('messageCreate', (msg) => {
-    if (msg.content === "get out") {
-        connection.destroy();
-    } else if (msg.content === "get in") {
-        connection = JoinChannel(msg.member.voice.channel.id)
-    } else if (msg.content === "play") {
-        let resource = createAudioResource('./sounds/test_music.mp3', { inlineVolume: true });
-        resource.volume.setVolume(0.2);
-        player.play(resource);
-        connection.subscribe(player);
-    } else if (msg.content === "stop") {
-        player.stop();
-    } else if (msg.content.startsWith("eval")) {
-        const splited = msg.content.split('|');
-        try { msg.reply(`\`\`\`${eval(splited[1])}\`\`\``); }
-        catch(e) { msg.reply(`\`\`\`${e}\`\`\``); }
-    } else if (msg.content === "move me") {
-        msg.member.voice.setChannel(bot.channels.cache.get(TARGET_VOICE_CHANNEL));
-    } else if (msg.content === "바나나야 닥쳐") {
-        const target_guild = bot.guilds.cache.get(TARGET_GUILD);
-        const target_user = target_guild.members.cache.get("689003151239807138");
-        try {
-            target_user.voice.setMute(true);
-        } catch (e) {
-            console.log(`권한이 없음`);
-        }
-    } else if (msg.content === "바나나야 말해") {
-        const target_guild = bot.guilds.cache.get(TARGET_GUILD);
-        const target_user = target_guild.members.cache.get("689003151239807138");
-        try {
-            target_user.voice.setMute(false);
-        } catch (e) {
-            console.log(`권한이 없음`);
-        }
-    } else if (msg.content.startsWith("기타빌런 처단")) {
-        const target_guild = bot.guilds.cache.get(TARGET_GUILD);
-        const target_user = target_guild.members.cache.get("749471568530374727");
-        try {
-            target_user.voice.setMute(true);
-        } catch (e) {
-            console.log(`권한이 없음`);
-        }
-    } else if (msg.content.startsWith("기타빌런 풀어주기")) {
-        const target_guild = bot.guilds.cache.get(TARGET_GUILD);
-        const target_user = target_guild.members.cache.get("749471568530374727");
-        try {
-            target_user.voice.setMute(false);
-        } catch (e) {
-            console.log(`권한이 없음`);
-        }
+    if (msg.content === "시이험 시이ㅣㅣ작!") {
+        start_test();
     }
 });
 
-function break_time() {
-    return new Promise((resolove) => {
+
+const subject_title = ["국어", "수학", "외국어"];
+
+function break_time(num, channel) {
+    return new Promise((resolve) => {
+        play_start_bell();
+        channel.bulkDelete(100);
+        channel.send({ embeds: [
+            new MessageEmbed({
+                title: `쉬는 시간`,
+                description: `쉬는 시간 입니다. 쉬세요~\n쉬면서 다음 시험 준비를 부탁드립니다.`,
+                fields: [
+                    { name: "이전 교시", value: (num-1) == -1 ? "없음" : `${subject_title[num-1]} 영역`, inline: true},
+                    { name: "다음 교시", value: (num == 2) ? "없음" : `${subject_title[num]} 영역`, inline: true} 
+                ],
+                color: '#ffC0CB'
+            })
+        ]})
         setTimeout(() => {
-            resolove
-        }, 600000)
-    }) 
+            resolve();
+        }, 600000) // 600000ms = 10min
+    });
 }
 
-function start_test() {
-    setTimeout(() => {
-        
-    }, 4800000);
+function main_time(num, time, channel) {
+    return new Promise((reslove) => {
+        play_start_bell(num);
+        channel.bulkDelete(100);
+        let start = new Date();
+        let end = new Date();
+        end.setMinutes(start.getMinutes() + time);
+        channel.send({
+            embeds: [
+                new MessageEmbed({
+                    title: `[${num+1}교시] ${subject_title[num]} 영역`,
+                    description: `${subject_title[num]} 영역 시험이 시작되었습니다.`,
+                    fields: [
+                        { name: `시험 시간 (${time}분)`, value: `${start.toTimeString().split(' ')[0]} ~ ${end.toTimeString().split(' ')[0]}` }
+                    ],
+                    color: '#ffC0CB'
+                })
+            ]
+        });
+        setTimeout(() => {
+            reslove();
+        }, time*60000);
+    })
 }
 
+function play_start_bell(num) {
+    if (num == 2) //외국어 영역일 경우
+        next_music="./sounds/2021.03.listentest.mp3"
+    player.play(createAudioResource("./sounds/school_bell.mp3"))
+    connection.subscribe(player);
+}
+
+async function start_test() {
+    JoinChannel(TARGET_VOICE_CHANNEL);
+    const channel = bot.channels.cache.get(TARGET_TEXT_CHANNEL);
+    await break_time(2, channel);
+    await main_time(2, 70, channel);
+}
 
 bot.login(token);
 
